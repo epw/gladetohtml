@@ -1,0 +1,18 @@
+/* GTK+ styles for CSS */
+
+body { font-family: sans-serif }
+
+div.GtkWindow { border: 2px outset lightgray; background-color: #f7f5f4 }
+
+div.GtkHBox { display: box; box-orient: horizontal; display: -webkit-box; -webkit-box-orient: horizontal; display: -moz-box; -moz-box-orient: horizontal }
+div.GtkVBox { display: box; box-orient: vertical; display: -webkit-box; -webkit-box-orient: vertical; display: -moz-box; -moz-box-orient: vertical }
+
+div.GtkHButtonBox { display: box; box-orient: horizontal; display: -webkit-box; -webkit-box-orient: horizontal; display: -moz-box; -moz-box-orient: horizontal }
+div.GtkVButtonBox { display: box; box-orient: vertical; display: -webkit-box; -webkit-box-orient: vertical; display: -moz-box; -moz-box-orient: vertical }
+div.GtkHButtonBox > input[type="button"|type="checkbox"|type="radio"] { box-flex: 1.0; -webkit-box-flex: 1.0; -moz-box-flex: 1.0 }
+div.GtkVButtonBox > input[type="button"|type="checkbox"|type="radio"] { box-flex: 1.0; -webkit-box-flex: 1.0; -moz-box-flex: 1.0 }
+
+input.GtkEntry { border: thin solid gray; border-radius: 3px }
+input.GtkEntry[disabled="disabled"] { background-color: white }
+
+input.GtkLinkButton { color: blue; text-decoration: underline; cursor: pointer }

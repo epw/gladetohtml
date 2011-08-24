@@ -1,0 +1,123 @@
+#! /usr/bin/env python
+
+import getopt, subprocess, sys, os, re
+
+def var_replace (output, var_dict):
+    output = output.replace ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+                             "<!DOCTYPE HTML>")
+
+    for key in var_dict.keys():
+        output = re.sub (r'<g2h:extern>' + key + r'</g2h:extern>', var_dict[key],
+                         output)
+        output = re.sub (r'(["\'][^"\']*)\\[$]extern\[' + key
+                         + r'\]([^"\']*["\'])',
+                         r'\1' + var_dict[key] + r'\2', output)
+
+    return output
+
+def usage ():
+    sys.stderr.write ("Usage: " + sys.argv[0] + " [options] [Glade file]\n"
+                     + "Options:\n"
+                     + "\t-h, --help\tThis output\n"
+                     + "\t-g, --gtkcss\tgtk.css path (as seen in web server)\n"
+                     + "\t-i, --input\tGlade file (can also be after other options, - for stdin)\n"
+                     + "\t-j, --jquery\tjQuery path (as seen in web server)\n"
+                     + "\t-o, --output\tHTML file (if not specified, will be extrapolated, - for stdout)\n"
+                     + "\t-t, --title\tTitle to be put in HTML\n"
+                     + "\t-w, --webshim\tWebshim path (as seen in web server)\n"
+                     + "If the glade file is not specified by --input or as the final argument, reads from stdin.\n")
+
+def main ():
+    if len(sys.argv) < 2:
+        usage ()
+        return 1
+
+    # Dictionary referenced in XSLT by $extern
+    var_dict = {"TITLE": "INSERT TITLE HERE",
+                "GTKCSS": "gtk.css",
+                "JQUERY": "http://code.jquery.com/jquery-latest.min.js",
+                "WEBSHIM": ""}
+
+    in_pipe = False # If true, input is read from stdin. If false, from a file
+    out_pipe = False # If true, output is sent to stdout. If false, to HTML file
+
+    input_filename = output_filename = ""
+
+    opts, args = getopt.getopt (sys.argv[1:], "g:hi:j:o:t:w:?",
+                                ["input", "output", "title=", "gtkcss=",
+                                 "jquery=", "webshim="])
+
+    for opt, val in opts:
+        if opt == "-h" or opt == "-?":
+            usage ()
+            return 0
+        if opt == "-i" or opt == "--input":
+            if val == "-":
+                in_pipe = True
+            else:
+                input_filename = val
+        if opt == "-o" or opt == "--output":
+            if val == "-":
+                out_pipe = True
+            else:
+                output_filename = val
+        if opt == "-t" or opt == "--title":
+            var_dict["TITLE"] = val
+        if opt == "-g" or opt == "--gtkcss":
+            var_dict["GTKCSS"] = val
+        if opt == "-j" or opt == "--jquery":
+            var_dict["JQUERY"] = val
+        if opt == "-w" or opt == "--webshim":
+            var_dict["WEBSHIM"] = val
+
+    if input_filename == "":
+        if len(args) == 0:
+            in_pipe = True
+        input_filename = args.pop()
+
+    if output_filename == "":
+        if in_pipe and not out_pipe:
+            sys.stderr.write ("Error: output filename is needed when input is a pipe. Specify an output file with --output\n")
+            return 1
+        
+        output_filename = input_filename.replace (".glade", ".html")
+            
+        if output_filename.find (".html") == -1:
+            output_filename = input_filename + ".html"
+
+    if not out_pipe:
+        var_dict["BASENAME"] = output_filename.replace (".html", "")
+    else:
+        var_dict["BASENAME"] = "page"
+
+    open (var_dict["BASENAME"] + ".css", "a").close ()
+    open (var_dict["BASENAME"] + ".js", "a").close ()
+
+    command = ["xalan", "-xsl", "gladetohtml.xsl"]
+
+    if in_pipe == False:
+        command += ["-in", input_filename]
+
+    if out_pipe == False:
+        command += ["-out", output_filename]
+
+    p = subprocess.Popen (command, stdout=subprocess.PIPE)
+    output = p.communicate()[0]
+
+    if out_pipe == False:
+        with open (output_filename) as f:
+            output = f.read ()
+
+    output = var_replace (output, var_dict)
+
+    if out_pipe:
+        print (output)
+    else:
+        with open (output_filename, "w") as f:
+            f.write (output)
+
+if __name__ == "__main__":
+    retcode = main ()
+    if retcode == None:
+        retcode = 0
+    exit (retcode)
