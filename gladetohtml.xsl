@@ -27,6 +27,16 @@
 	<script type="text/javascript" src="\$extern[WEBSHIMS]">/* */</script>
 	<script type="text/javascript" src="\$extern[BASENAME].js">/* */</script>
 	<script type="text/javascript">
+$.webshims.setOptions('forms', { customMessages: true}); 
+$.webshims.polyfill();
+		
+$(function(){
+  var showHideFormsExt = function(){
+    $('span.forms-ext-feature')[this.checked ? 'show' : 'hide']();
+  };
+  $('#show-forms-ext').each(showHideFormsExt).click(showHideFormsExt);
+});
+
 function glade_init () {
 	  <xsl:for-each select="/interface/object[@class='GtkWindow']//object[signal]">
   try {
@@ -49,6 +59,16 @@ $(document).ready (glade_init);
       <body>
         <xsl:apply-templates select="/interface/object[@class='GtkWindow']" />
       </body>
+      <g2h:signals>
+	<xsl:for-each select="/interface/object[@class='GtkWindow']//object[signal]">
+	  <g2h:signal>
+	    <g2h:object><xsl:value-of select="@id" /></g2h:object>
+	    <g2h:class><xsl:value-of select="@class" /></g2h:class>
+	    <g2h:name><xsl:value-of select="signal/@name" /></g2h:name>
+	    <g2h:handler><xsl:value-of select="signal/@handler" /></g2h:handler>
+	  </g2h:signal>
+	</xsl:for-each>
+      </g2h:signals>
     </html>
   </xsl:template>
 
@@ -72,6 +92,14 @@ $(document).ready (glade_init);
   <xsl:template match="property[@name = 'xpad']">padding-left: <xsl:value-of select="." />px; padding-right: <xsl:value-of select="." />px; </xsl:template>
 
   <xsl:template match="property[@name = 'ypad']">padding-top: <xsl:value-of select="." />px; padding-bottom: <xsl:value-of select="." />px; </xsl:template>
+
+  <xsl:template match="property[@name = 'xalign']"><xsl:param name="type" /><xsl:if test="$type = 'container'"><xsl:choose>
+	<xsl:when test="self::node() &lt; .25">text-align: left; </xsl:when>
+	<xsl:when test="self::node() &gt; .75">text-align: right; </xsl:when></xsl:choose></xsl:if></xsl:template>
+
+  <xsl:template match="property[@name = 'yalign']"><xsl:param name="type" /><xsl:if test="$type = 'container'"><xsl:choose>
+	<xsl:when test="self::node() &lt; .25">vertical-align: top; </xsl:when>
+	<xsl:when test="self::node() &gt; .75">vertical-align: bottom; </xsl:when></xsl:choose></xsl:if></xsl:template>
 
   <xsl:template match="property[@name = 'single_line_mode']"><xsl:if test="self::node() = 'True'">text-wrap: none; </xsl:if></xsl:template> 
 
@@ -195,7 +223,7 @@ $(document).ready (glade_init);
   <!-- General elements -->
 
   <xsl:template match="object[@class='GtkLabel']">
-    <div class="GtkLabelContainer" id="container_{@id}">
+    <div class="GtkLabelContainer gladecontainer" id="container_{@id}">
       <span class="GtkLabel" id="{@id}">
 	<xsl:value-of select="property[@name='label']" />
       </span>
@@ -205,7 +233,7 @@ $(document).ready (glade_init);
   <!-- Input elements -->
 
   <xsl:template match="object[@class='GtkButton']">
-    <div class="GtkButtonContainer" id="container_{@id}">
+    <div class="GtkButtonContainer gladecontainer" id="container_{@id}">
       <input type="button" class="GtkButton" name="{@id}" id="{@id}"
 	     value="{property[@name='label']}" />
     </div>
@@ -216,7 +244,7 @@ $(document).ready (glade_init);
 	<xsl:when test="property[@name='visibility'] = 'False'">password</xsl:when>
 	<xsl:otherwise>text</xsl:otherwise>
     </xsl:choose></xsl:variable>
-    <div class="GtkEntryContainer" id="container_{@id}">
+    <div class="GtkEntryContainer gladecontainer" id="container_{@id}">
       <xsl:choose>
 	<xsl:when test="property[@name='editable'] = 'False'"><input type="{$type}" class="GtkEntry" name="{@id}" id="{@id}" disabled="disabled" value="{property[@name='text']}" /></xsl:when>
 	<xsl:otherwise><input type="{$type}" class="GtkEntry" name="{@id}" id="{@id}" value="{property[@name='text']}" /></xsl:otherwise>
@@ -225,14 +253,14 @@ $(document).ready (glade_init);
   </xsl:template>
 
   <xsl:template match="object[@class='GtkToggleButton']">
-    <div class="GtkToggleButtonContainer" id="container_{@id}">
+    <div class="GtkToggleButtonContainer gladecontainer" id="container_{@id}">
       <input type="button" class="GtkToggleButton" name="{@id}" id="{@id}"
 	     value="{property[@name='label']}" />
     </div>
   </xsl:template>
 
   <xsl:template match="object[@class='GtkCheckButton']">
-    <div class="GtkCheckButtonContainer" id="container_{@id}">
+    <div class="GtkCheckButtonContainer gladecontainer" id="container_{@id}">
       <span class="GtkCheckButton" id="{@id}">
 	<input type="checkbox" class="GtkCheckButton" name="{@id}" id="input_{@id}" />
 	<label for="input_{@id}"><xsl:value-of select="property[@name='label']" /></label>
@@ -245,7 +273,7 @@ $(document).ready (glade_init);
 	<xsl:when test="property[@name='group']"><xsl:value-of select="property[@name='group']" /></xsl:when>
 	<xsl:otherwise><xsl:value-of select="@id" /></xsl:otherwise>
     </xsl:choose></xsl:variable>
-    <div class="GtkRadioButtonContainer" id="container_{@id}">
+    <div class="GtkRadioButtonContainer gladecontainer" id="container_{@id}">
       <span class="GtkRadioButton" id="{@id}">
 	<input type="radio" class="GtkRadioButton" name="$name" id="input_{@id}" />
 	<label for="input_{@id}"><xsl:value-of select="property[@name='label']" /></label>
@@ -254,32 +282,32 @@ $(document).ready (glade_init);
   </xsl:template>
 
   <xsl:template match="object[@class='GtkFileChooserButton']">
-    <div class="GtkFileChooserButtonContainer" id="container_{@id}">
+    <div class="GtkFileChooserButtonContainer gladecontainer" id="container_{@id}">
       <input type="file" class="GtkFileChooserButton" name="{@id}" id="{@id}" />
     </div>
   </xsl:template>
 
   <xsl:template match="object[@class='GtkColorButton']">
-    <div class="GtkColorButtonContainer" id="container_{@id}">
+    <div class="GtkColorButtonContainer gladecontainer" id="container_{@id}">
       <input type="color" class="GtkColorButton" name="{@id}" id="{@id}" />
     </div>
   </xsl:template>
 
   <xsl:template match="object[@class='GtkLinkButton']">
-    <div class="GtkLinkButtonContainer" id="container_{@id}">
+    <div class="GtkLinkButtonContainer gladecontainer" id="container_{@id}">
       <input type="button" class="GtkLinkButton" name="{@id}" id="{@id}" value="{property[@name='label']}"/>
     </div>
   </xsl:template>
 
   <xsl:template match="object[@class='GtkImage']">
-    <div class="GtkImageContainer" id="container_{@id}">
+    <div class="GtkImageContainer gladecontainer" id="container_{@id}">
       <img class="GtkImage" id="{@id}" src="{property[@name='pixbuf']}" width="{property[@name='width_request']}" height="{property[@name='height_request']}" />
     </div>
   </xsl:template>
 
   <xsl:template match="object[@class='GtkHScale']">
     <xsl:variable name="adjustment"><xsl:value-of select="property[@name='adjustment']" /></xsl:variable>
-    <div class="GtkHScaleContainer" id="container_{@id}">
+    <div class="GtkHScaleContainer gladecontainer" id="container_{@id}">
       <span class="GtkHScale" id="span_{@id}"><xsl:value-of select="key ('ref', $adjustment)/property[@name='value']" /></span><br />
       <input type="range" class="GtkHScale" name="{@id}" id="{@id}" min="{key ('ref', $adjustment)/property[@name='lower']}" max="{key ('ref', $adjustment)/property[@name='upper']}" step="{key ('ref', $adjustment)/property[@name='step_increment']}" value="{key ('ref', $adjustment)/property[@name='value']}" />
     </div>
@@ -287,7 +315,7 @@ $(document).ready (glade_init);
 
   <xsl:template match="object[@class='GtkVScale']">
     <xsl:variable name="adjustment"><xsl:value-of select="property[@name='adjustment']" /></xsl:variable>
-    <div class="GtkVScaleContainer" id="container_{@id}">
+    <div class="GtkVScaleContainer gladecontainer" id="container_{@id}">
       <span class="GtkVScale" id="span_{@id}"><xsl:value-of select="key ('ref', $adjustment)/property[@name='value']" /></span><br />
       <input type="range" class="GtkVScale" name="{@id}" id="{@id}" min="{key ('ref', $adjustment)/property[@name='lower']}" max="{key ('ref', $adjustment)/property[@name='upper']}" step="{key ('ref', $adjustment)/property[@name='step_increment']}" value="{key ('ref', $adjustment)/property[@name='value']}" />
     </div>

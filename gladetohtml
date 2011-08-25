@@ -1,34 +1,109 @@
 #! /usr/bin/env python
 
-import getopt, subprocess, sys, os, re
+# Written by Eric Willisson (ericwillisson@gmail.com) in 2011
+
+# This program translates the GtkBuilder output of the Glade User Interface
+# Designer into a web page. See https://github.com/epw/gladetohtml for more
+# details.
+
+# Run with --help to see usage information
+
+import getopt, subprocess, sys, os, re, xml.dom.minidom
 
 def var_replace (output, var_dict):
+    """Replace instances of <g2h:extern>KEY</g2h:extern> and \$extern[KEY]
+    with the values specified in var_dict. Also replaces XML header with
+    HTML doctype. Returns new output string.
+
+    output - the string to operate on
+    var_dict - the dictionary of keys with corresponding values.
+               A pair "KEY": "VALUE" would cause both of the strings above
+               to be replaced with "VALUE"."""
+    
     output = output.replace ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
                              "<!DOCTYPE HTML>")
 
     for key in var_dict.keys():
         output = re.sub (r'<g2h:extern>' + key + r'</g2h:extern>', var_dict[key],
                          output)
+        # This regular expression is an awful mess, but matches
+        # \$extern[...] when the string is found inside single or double-quotes.
         output = re.sub (r'(["\'][^"\']*)\\[$]extern\[' + key
                          + r'\]([^"\']*["\'])',
                          r'\1' + var_dict[key] + r'\2', output)
 
     return output
 
-def usage ():
-    sys.stderr.write ("Usage: " + sys.argv[0] + " [options] [Glade file]\n"
-                     + "Options:\n"
-                     + "\t-h, --help\tThis output\n"
-                     + "\t-g, --gtkcss\tgtk.css path (as seen in web server)\n"
-                     + "\t-i, --input\tGlade file (can also be after other options, - for stdin)\n"
-                     + "\t-j, --jquery\tjQuery path (as seen in web server)\n"
-                     + "\t-o, --output\tHTML file (if not specified, will be extrapolated, - for stdout)\n"
-                     + "\t-t, --title\tTitle to be put in HTML\n"
-                     + "\t-w, --webshim\tWebshim path (as seen in web server)\n"
-                     + "If the glade file is not specified by --input or as the final argument, reads from stdin.\n")
+def signal_notify (output, signal_xml=False):
+    """Find the list of signals defined by GtkBuilder which has been written
+    into the end of the HTML file. Remove it from the file's contents, and
+    print the information on the signals to the command line. Returns new
+    output string.
 
-def main ():
-    if len(sys.argv) < 2:
+    output - the string to operate on
+    signal_xml - Optional; if True, prints the XML data about the signals
+                 directly."""
+
+    # Compiling the regular expression ahead of time because re.sub can't take
+    # flags
+    regex = re.compile (r'<g2h:signals>.*</g2h:signals>', re.MULTILINE | re.DOTALL)
+
+    signals_match = re.search (regex, output)
+    if signals_match:
+        output = re.sub (regex, '', output)
+        signals_string = ("<?xml version='1.0'?>\n<python xmlns:g2h='http://users.wpi.edu/~epw/gladetohtml'>\n" + signals_match.group(0)
+                          + "\n</python>")
+        if signal_xml:
+            print signals_string
+            return output
+
+        signals = xml.dom.minidom.parseString (signals_string)
+
+        # Crude table display algorithm
+
+        print ("SIGNAL".center(15) + "|" + "OBJECT".center(15) + "|" + "ID".center(15) + "| HANDLER")
+        print "-"*60
+
+        for signal in signals.getElementsByTagName("g2h:signal"):
+            for child in signal.childNodes:
+                if child.nodeName == u'g2h:object':
+                    object_id = child.firstChild.nodeValue
+                elif child.nodeName == u'g2h:class':
+                    object_class = child.firstChild.nodeValue
+                elif child.nodeName == u'g2h:name':
+                    name = child.firstChild.nodeValue
+                elif child.nodeName == u'g2h:handler':
+                    handler = child.firstChild.nodeValue
+
+            print "%s| %s| %s| %s" % (name.ljust(15), object_class.ljust(14), object_id.ljust(14), handler)
+
+    return output
+
+def usage ():
+    """Print usage string."""
+    sys.stderr.write ("Usage: " + sys.argv[0] + " [options] [Glade file]\n"
+                      + "Options:\n"
+                      + "\t-h, --help\tThis output\n"
+                      + "\t-g, --gtkcss\tgtk.css path (as seen in web server)\n"
+                      + "\t-i, --input\tGlade file (can also be after other options, - for stdin)\n"
+                      + "\t-j, --jquery\tjQuery path (as seen in web server)\n"
+                      + "\t-o, --output\tHTML file (if not specified, will be extrapolated, - for stdout)\n"
+                      + "\t-s, --signal-xml\tOutput signal information in XML instead of plain text\n"
+                      + "\t-t, --title\tTitle to be put in HTML\n"
+                      + "\t-w, --webshims\tWebshim path (as seen in web server)\n"
+                      + "If the glade file is not specified by --input or as the final argument, reads from stdin.\n\n"
+                      + "When the program runs successfully, it will output a list of the signals handled by the GUI.\n"
+                      + "Functions with names matching the handlers should be defined in the custom JavaScript file.\n")
+
+def main (argv):
+    """Runs the main program. Its full function is explained in report.pdf,
+    available from https://github.com/epw/gladetohtml
+
+    Returns 0 on success and 1 on failure.
+
+    argv - List of arguments, usually sys.argv[1:]"""
+
+    if len(argv) < 1:
         usage ()
         return 1
 
@@ -36,16 +111,18 @@ def main ():
     var_dict = {"TITLE": "INSERT TITLE HERE",
                 "GTKCSS": "gtk.css",
                 "JQUERY": "http://code.jquery.com/jquery-latest.min.js",
-                "WEBSHIM": ""}
+                "WEBSHIMS": ""}
+
+    signal_xml = False # if true, output signal information in XML
 
     in_pipe = False # If true, input is read from stdin. If false, from a file
     out_pipe = False # If true, output is sent to stdout. If false, to HTML file
 
     input_filename = output_filename = ""
 
-    opts, args = getopt.getopt (sys.argv[1:], "g:hi:j:o:t:w:?",
-                                ["input", "output", "title=", "gtkcss=",
-                                 "jquery=", "webshim="])
+    opts, args = getopt.getopt (argv, "g:hi:j:o:st:w:?",
+                                ["input", "output", "signal-xml", "title=",
+                                 "gtkcss=", "jquery=", "webshims="])
 
     for opt, val in opts:
         if opt == "-h" or opt == "-?":
@@ -67,8 +144,11 @@ def main ():
             var_dict["GTKCSS"] = val
         if opt == "-j" or opt == "--jquery":
             var_dict["JQUERY"] = val
-        if opt == "-w" or opt == "--webshim":
-            var_dict["WEBSHIM"] = val
+        if opt == "-w" or opt == "--webshims":
+            var_dict["WEBSHIMS"] = val
+
+        if opt == "-s" or opt == "--signal-xml":
+            signal_xml = True        
 
     if input_filename == "":
         if len(args) == 0:
@@ -101,6 +181,7 @@ def main ():
     if out_pipe == False:
         command += ["-out", output_filename]
 
+    # stderr property is not given so XALAN errors will be printed for user
     p = subprocess.Popen (command, stdout=subprocess.PIPE)
     output = p.communicate()[0]
 
@@ -109,6 +190,7 @@ def main ():
             output = f.read ()
 
     output = var_replace (output, var_dict)
+    output = signal_notify (output, signal_xml)
 
     if out_pipe:
         print (output)
@@ -117,7 +199,7 @@ def main ():
             f.write (output)
 
 if __name__ == "__main__":
-    retcode = main ()
+    retcode = main (sys.argv[1:])
     if retcode == None:
         retcode = 0
     exit (retcode)

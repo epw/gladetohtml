@@ -2,6 +2,8 @@
 
 body { font-family: sans-serif }
 
+div.gladecontainer { text-align: center; vertical-align: middle }
+
 div.GtkWindow { border: 2px outset lightgray; background-color: #f7f5f4 }
 
 div.GtkHBox { display: box; box-orient: horizontal; display: -webkit-box; -webkit-box-orient: horizontal; display: -moz-box; -moz-box-orient: horizontal }
