@@ -90,7 +90,7 @@ def usage ():
                       + "\t-o, --output\tHTML file (if not specified, will be extrapolated, - for stdout)\n"
                       + "\t-s, --signal-xml\tOutput signal information in XML instead of plain text\n"
                       + "\t-t, --title\tTitle to be put in HTML\n"
-                      + "\t-w, --webshims\tWebshim path (as seen in web server)\n"
+                      + "\t-w, --webshims\tWebshim directory path (as seen in web server)\n"
                       + "If the glade file is not specified by --input or as the final argument, reads from stdin.\n\n"
                       + "When the program runs successfully, it will output a list of the signals handled by the GUI.\n"
                       + "Functions with names matching the handlers should be defined in the custom JavaScript file.\n")
@@ -111,7 +111,7 @@ def main (argv):
     var_dict = {"TITLE": "INSERT TITLE HERE",
                 "GTKCSS": "gtk.css",
                 "JQUERY": "http://code.jquery.com/jquery-latest.min.js",
-                "WEBSHIMS": ""}
+                "WEBSHIMS": "webshim"}
 
     signal_xml = False # if true, output signal information in XML
 

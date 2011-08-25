@@ -24,19 +24,10 @@
 </xsl:for-each>
 	</style>
 	<script type="text/javascript" src="\$extern[JQUERY]">/* */</script>
-	<script type="text/javascript" src="\$extern[WEBSHIMS]">/* */</script>
+	<script type="text/javascript" src="\$extern[WEBSHIMS]/main.js">/* */</script>
 	<script type="text/javascript" src="\$extern[BASENAME].js">/* */</script>
+	<script type="text/javascript" src="\$extern[WEBSHIMS]/init.js">/* */</script>
 	<script type="text/javascript">
-$.webshims.setOptions('forms', { customMessages: true}); 
-$.webshims.polyfill();
-		
-$(function(){
-  var showHideFormsExt = function(){
-    $('span.forms-ext-feature')[this.checked ? 'show' : 'hide']();
-  };
-  $('#show-forms-ext').each(showHideFormsExt).click(showHideFormsExt);
-});
-
 function glade_init () {
 	  <xsl:for-each select="/interface/object[@class='GtkWindow']//object[signal]">
   try {
