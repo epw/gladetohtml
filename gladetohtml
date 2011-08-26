@@ -82,6 +82,9 @@ def signal_notify (output, signal_xml=False):
 def usage ():
     """Print usage string."""
     sys.stderr.write ("Usage: " + sys.argv[0] + " [options] [Glade file]\n"
+                      + "NOTE: This program requires XALAN. Download it from\n"
+                      + "http://xml.apache.org/xalan-c/download.html if it is\n"
+                      + "not installed.\n\n"
                       + "Options:\n"
                       + "\t-h, --help\tThis output\n"
                       + "\t-g, --gtkcss\tgtk.css path (as seen in web server)\n"
