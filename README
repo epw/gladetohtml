@@ -6,6 +6,7 @@ REQUIREMENTS:
 Python version >= 2.6, < 3
 Glade version >= 3.8
 Xalan version >= 1.10
+A jQuery JavaScript file
 
 INSTALLATION:
 
@@ -15,3 +16,40 @@ from the package directory.
 
 USAGE:
 
+Glade to HTML is most useful for creating individual Web pages that
+need heavy user interaction with standard Graphical User Interface
+widgets, such as buttons and text fields.
+
+To create such a page, begin by laying it out from within the Glade
+program itself. There are many tutorials on using Glade, including one
+at http://live.gnome.org/Glade/Tutorials .
+
+Glade to HTML currently only implements a subset of the widgets,
+properties, and signal handlers in Glade. The list is in the file
+SUPPORTED.
+
+NOTE: The toplevel window should always have the "Default Width" field
+under "General" window properties set. HTML windows default to being
+as wide as possible, while Glade assumes they default to being as
+narrow as possible.
+
+When the interface is saved, it will normally have the .glade
+extension, and will contain XML data. It can then be run through Glade
+to HTML (here assuming a file named interface.glade):
+   $ ./gladetohtml interface.glade
+This will generate interface.html, interface.css, and interface.js
+
+The HTML file contains a description of the actual interface. The CSS
+and JavaScript files are blank by default, but can be altered to tweak
+the page itself.
+
+To use the generated HTML interface in a Web server, copy the .html,
+.css, and .js files to a directory, along with gtk.css, the webshim/
+subdirectory, and a jQuery file named jquery.js
+
+SIGNALS: If supported signals are given handler callbacks in Glade,
+then the corresponding JavaScript function will be called in the HTML
+page. Setting the "clicked" signal handler on a GtkButton to
+"click_callback" will cause a JavaScript function named
+"click_callback" to be called when the HTML button's onClick event
+occurs.
