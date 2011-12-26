@@ -1,0 +1,17 @@
+Glade to HTML is a tool to aid developers in creating Web applications
+composed of HTML, CSS, and JavaScript.
+
+REQUIREMENTS:
+
+Python version >= 2.6, < 3
+Glade version >= 3.8
+Xalan version >= 1.10
+
+INSTALLATION:
+
+Download the package and extract it. Run
+    $ ./gladetohtml
+from the package directory.
+
+USAGE:
+

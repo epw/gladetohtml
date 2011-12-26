@@ -54,7 +54,7 @@ def signal_notify (output, signal_xml=False):
         signals_string = ("<?xml version='1.0'?>\n<python xmlns:g2h='http://users.wpi.edu/~epw/gladetohtml'>\n" + signals_match.group(0)
                           + "\n</python>")
         if signal_xml:
-            print signals_string
+            print (signals_string)
             return output
 
         signals = xml.dom.minidom.parseString (signals_string)
@@ -62,7 +62,7 @@ def signal_notify (output, signal_xml=False):
         # Crude table display algorithm
 
         print ("SIGNAL".center(15) + "|" + "OBJECT".center(15) + "|" + "ID".center(15) + "| HANDLER")
-        print "-"*60
+        print ("-"*60)
 
         for signal in signals.getElementsByTagName("g2h:signal"):
             for child in signal.childNodes:
@@ -185,7 +185,18 @@ def main (argv):
         command += ["-out", output_filename]
 
     # stderr property is not given so XALAN errors will be printed for user
-    p = subprocess.Popen (command, stdout=subprocess.PIPE)
+    try:
+        p = subprocess.Popen (command, stdout=subprocess.PIPE)
+    except OSError as e:
+        if e.errno == 2:
+            sys.stderr.write ("""Error: Glade to HTML requires XALAN to be installed to perform the translation.
+
+Install the 'xalan' package from your software repositories, or download
+it from http://xalan.apache.org/
+""")
+            exit (-1)
+        raise e
+        
     output = p.communicate()[0]
 
     if out_pipe == False:
