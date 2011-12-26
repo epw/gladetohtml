@@ -8,6 +8,21 @@ Glade version >= 3.8
 Xalan version >= 1.10
 A jQuery JavaScript file
 
+COMPONENTS:
+
+gladetohtml - the main Python program
+gladetohtml.xsl - the XSLT stylesheet that translates Glade files to
+		  HTML
+gladetohtml.zip - A ZIP file of the program
+gtk.css - CSS stylesheet with classes that make HTML look more like
+	  GTK+
+README - This file
+report.pdf - The report written alongside this program for the Major
+	     Qualifying Project (MQP) at WPI.
+SUPPORTED - List of Glade elements supported by Glade to HTML
+webshim/ - Subdirectory to allow HTML5 compatibility in older
+	   browsers.
+
 INSTALLATION:
 
 Download the package and extract it. Run
